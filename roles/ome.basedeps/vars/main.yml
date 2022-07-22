@@ -1,0 +1,13 @@
+---
+basedeps_packages:
+  - curl
+  - patch
+  - rsync
+  - tar
+  - unzip
+  - wget
+  - zip
+
+basedeps_lsb_package:
+  RedHat: redhat-lsb-core
+  Debian: lsb-core

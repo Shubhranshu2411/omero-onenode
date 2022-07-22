@@ -1,0 +1,34 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint:
+  name: yamllint
+platforms:
+  - name: interpreter-py2-c7
+    image: centos:7
+    groups:
+      - py2
+  - name: interpreter-py2-u1804
+    image: ubuntu:18.04
+    groups:
+      - py2
+provisioner:
+  name: ansible
+  playbooks:
+    converge: ../resources/playbook.yml
+  lint:
+    name: ansible-lint
+  inventory:
+    group_vars:
+      py2:
+        ansible_python_interpreter: python2
+
+scenario:
+  name: interpreter-py2
+verifier:
+  name: testinfra
+  directory: ../resources/tests/
+  lint:
+    name: flake8

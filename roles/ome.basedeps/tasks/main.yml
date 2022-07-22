@@ -1,0 +1,32 @@
+---
+# tasks file for roles/basedeps
+
+- name: system packages | install epel repo
+  become: true
+  yum:
+    name: epel-release
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+# use separate yum/apt tasks because package only installs one item at a time
+
+- name: system packages | basic system utils (centos)
+  become: true
+  yum:
+    name: "{{ basedeps_packages }}"
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: system packages | basic system utils (ubuntu)
+  become: true
+  apt:
+    name: "{{ basedeps_packages }}"
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: system packages | lsb
+  become: true
+  package:
+    name: "{{ basedeps_lsb_package[ansible_os_family] }}"
+    state: present
+  when: basedeps_install_lsb

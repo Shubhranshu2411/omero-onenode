@@ -1,0 +1,22 @@
+---
+
+- import_tasks: redhat7.yml
+  when: >-
+    (ansible_os_family | lower == 'redhat') and
+    (ansible_distribution_major_version == '7')
+
+- import_tasks: debian.yml
+  when: ansible_os_family | lower == 'debian'
+
+- name: zeroc ice | symlink binaries
+  become: true
+  file:
+    force: true
+    path: "{{ ice_binaries_symlink_dest  }}/{{ item }}"
+    src: /opt/ice/bin/{{ item }}
+    state: link
+  when: 'ice_binaries_symlink_dest | length > 0'
+  with_items:
+    - glacier2router
+    - icegridadmin
+    - icegridnode
