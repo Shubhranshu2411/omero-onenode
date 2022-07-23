@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: ome-devel@lists.openmicroscopy.org.uk
+  description: Create OMERO user accounts and groups
+  company: Open Microscopy Environment
+  license: BSD
+  min_ansible_version: 2.6
+  platforms:
+    - name: EL
+      versions:
+        - 7
+    - name: Ubuntu
+      versions:
+        - bionic
+  role_name: omero_user
+  galaxy_tags: []
+
+dependencies: []

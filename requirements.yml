@@ -8,3 +8,6 @@
 
 - src: ome.omero_web
   version: 4.0.1
+
+- src: ome.omero_user
+  version: 0.3.0
