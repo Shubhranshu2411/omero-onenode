@@ -1,0 +1,12 @@
+---
+# tasks file for roles/cli-utils
+
+- name: system packages | cli user utils
+  become: true
+  yum:
+    name:
+      - bzip2
+      - screen
+      - tmux
+      - zsh
+    state: present

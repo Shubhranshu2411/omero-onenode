@@ -1,0 +1,4 @@
+---
+# Moved playbook to prod directory.
+
+- include: prod/playbook.yml

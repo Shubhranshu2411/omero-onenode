@@ -1,0 +1,42 @@
+---
+# Certbot auto-renew cron job configuration (for certificate renewals).
+certbot_auto_renew: true
+certbot_auto_renew_options: >
+  --quiet
+  --no-self-upgrade
+  {{ certbot_auto_renew_args }}
+certbot_auto_renew_args: ""
+# Post-renewal commands to run, e.g. to restart services
+certbot_auto_renew_deploy_hooks: []
+
+# Parameters used when creating new Certbot certs.
+certbot_create_if_missing: no
+certbot_create_method: standalone
+certbot_admin_email: email@example.com
+certbot_domains:
+  #     - example1.com
+  #     - example2.com
+certbot_create_command: >
+  {{ certbot_script }}
+  certonly
+  --standalone
+  --noninteractive
+  --agree-tos
+  --email {{ certbot_admin_email }}
+  -d {{ certbot_domains | join(',') }}
+  {{ certbot_create_args }}
+certbot_create_args: ""
+certbot_create_standalone_stop_services:
+  # - nginx
+  # - apache
+  # - varnish
+
+# To install from source (on older OSes or if you need a specific or newer
+# version of Certbot), set this variable to `yes` and configure other options.
+certbot_install_from_source: no
+certbot_repo: https://github.com/certbot/certbot.git
+certbot_version: master
+certbot_keep_updated: yes
+
+# Where to put Certbot when installing from source.
+certbot_dir: /opt/certbot
