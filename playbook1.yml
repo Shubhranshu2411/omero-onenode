@@ -1,4 +1,153 @@
 ---
-# Moved playbook to prod directory.
+- hosts: all
+  tasks:
+    - name: Set OS distribution dependent variables
+      include_vars: "{{ ansible_facts['os_family'] | lower }}.yml"
+      when: ansible_facts['os_family'] == "Debian"
 
-- include: prod/playbook.yml
+- hosts: omero-all
+  pre_tasks:
+
+    - name: OMERO.figure server-side prerequisites, script prerequisites + web server for decoupled OMERO.web
+      become: yes
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - mencoder # For the 'make movie' script
+
+roles:
+
+    - role: ome.postgresql
+      postgresql_databases:
+      - name: omero
+      postgresql_users:
+      - user: "{{ omero_server_dbuser | default('omero') }}"
+        password: "{{ omero_server_dbpassword | default('omero') }}"
+        databases: [omero]
+
+    - role: ome.omero_server
+      omero_server_release: "{{ omero_server_release_override | default('5.6.5') }}"
+      omero_server_python_addons:
+        - "omero-cli-duplicate=={{ omero_cli_duplicate_release }}"
+        - "omero-cli-render=={{ omero_cli_render_release }}"
+        - "omero-metadata=={{ omero_metadata_release }}"
+        # Needed for OMERO.figure export
+        - "reportlab<3.6"
+        - markdown
+        - scipy
+        # For "simple frap with figure" script
+        - matplotlib
+    
+    #- role: ome.nginx
+    
+    - role: ome.omero_web
+      tags: ['web']
+      omero_web_systemd_limit_nofile: 16384
+      omero_web_always_reset_config: True
+      #omero_web_systemd_start: True
+
+      omero_web_config_set:
+
+        omero.web.public.enabled: true
+        omero.web.public.server_id: 1
+        omero.web.public.user: "{{ omero_web_public_user_override | default('public') }}"
+        omero.web.public.password: "{{ omero_web_public_password_override | default('public') }}"
+        omero.web.public.url_filter: "^/(webadmin/myphoto/|webclient/\
+          (?!(action|logout|annotate_(file|tags|comment|rating|map)|\
+          script_ui|ome_tiff|figure_script))|\
+          webgateway/(?!(archived_files|download_as))\
+          |iviewer/|mapr/|figure/)"
+        omero.web.apps:
+           - "omero_figure"
+           - "omero_iviewer"
+           - "omero_mapr"
+           - "omero_parade"
+           - "omero_fpbioimage"
+           - "omero_webtagging_autotag"
+           - "omero_webtagging_tagsearch"
+        omero.web.ui.center_plugins:
+          - ["Auto Tag", "omero_webtagging_autotag/auto_tag_init.js.html", "auto_tag_panel"]
+          - ["Parade", "omero_parade/init.js.html", "omero_parade"]
+        omero.web.ui.top_links:
+          - ["Data", "webindex", {"title": "Browse Data via Projects, Tags etc"}]
+          - ["History", "history", {"title": "History"}]
+          - ["Figure", "figure_index", {"title": "Open Figure in new tab", "target": "_blank"}]
+          - ["Tag Search", "tagsearch"]
+          - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
+          - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]  
+          - ["Help", "https://help.openmicroscopy.org/", {"title": "Open OMERO user guide in a new tab", "target": "new"}]
+        omero.web.open_with:
+          - ["Image viewer", "webgateway", {"supported_objects": ["image"], "script_url": "webclient/javascript/ome.openwith_viewer.js"}]
+          - ["omero_figure", "new_figure", {"supported_objects":["images"], "target": "_blank", "label": "OMERO.figure"}]
+          - ["omero_fpbioimage", "fpbioimage_index", {"supported_objects":["image"], "script_url": "fpbioimage/openwith.js", "label": "FPBioimage"}]
+          - - omero_iviewer
+            - omero_iviewer_index
+            - supported_objects:
+                - images
+                - dataset
+                - well
+              script_url: omero_iviewer/openwith.js
+              label: OMERO.iviewer   
+        omero.web.viewer.view: omero_iviewer.views.index
+        omero.web.mapr.config:
+          - menu: gene
+            config:
+              default:
+                - "Gene Symbol"
+              all:
+                - "Gene Symbol"
+                - "Gene Identifier"
+              ns:
+                - "openmicroscopy.org/mapr/gene"
+              label: "Gene"
+          - menu: keyvalue
+            config:
+              default:
+                - "Any Value"
+              all: []
+              ns:
+                - "openmicroscopy.org/omero/client/mapAnnotation"
+              label: "KeyValue"
+
+  vars:
+    ## omero.server variables  
+    # temporal upgrade force for omero server workaround
+    # omero_server_checkupgrade_comparator: '!='
+    omero_server_datadir_chown: True
+    omero_server_selfsigned_certificates: True
+    omero_server_rootpassword: ChangeMe
+    # omero_server_system_managedrepo_group: managed_repo_group
+    # omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
+    # omero_server_datadir_chown: False
+    
+    omero_server_config_set:
+      omero.certificates.owner: "/C=IN/ST=KA/L=Home/O=OME"
+      omero.client.icetransports: ssl,wss,tcp
+      omero.fs.watchDir: "/home/DropBox"
+      omero.fs.importArgs: "-T \"regex:^.*/(?<Container1>.*?)\""
+      omero.glacier2.IceSSL.Ciphers: "ADH:HIGH"
+      omero.glacier2.IceSSL.DefaultDir: /opt/omero/server/selfsigned
+      omero.glacier2.IceSSL.CAs: server.pem
+      omero.glacier2.IceSSL.CertFile: server.p12
+      # This password doesn't need to be secret
+      omero.glacier2.IceSSL.Password: secret
+      omero.fs.repo.path: "%user%_%userId%/%thread%//%year%-%month%/%day%/%time%"
+      omero.server.nodedescriptors: "master:Blitz-0,Indexer-0,Processor-0,Storm,Tables-0"
+      # omero.throttling.method_time.error: 60000
+      
+      ## PRODUCTION VARIABLES: For a production system,
+      ## remove "_DISABLED" from the following property
+      ## in order to scale up for more users.
+      ## Disabling permits testing on smaller VMs.
+    omero_server_config_set_DISABLED:  
+      omero.db.poolsize: 50
+      omero.jvmcfg.percent.blitz: 50
+      omero.jvmcfg.percent.indexer: 20
+      omero.jvmcfg.percent.pixeldata: 20
+      
+    
+    ## postgresql variables
+    postgresql_version: "13"
+
+
