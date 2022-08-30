@@ -41,6 +41,9 @@ roles:
     
     #- role: ome.nginx
     
+    - role: ome.ssl_certificate
+      tags: ssl
+    
     - role: ome.omero_web
       tags: ['web']
       omero_web_systemd_limit_nofile: 16384
@@ -109,7 +112,125 @@ roles:
               ns:
                 - "openmicroscopy.org/omero/client/mapAnnotation"
               label: "KeyValue"
+        omero.web.nginx_server_extra_config:
+          - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
+          - >
+            location = /omero-ws {
+              proxy_pass https://127.0.0.1:4066;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection $connection_upgrade;
+              proxy_read_timeout 86400;
+            }
+            
+    - role: ome.omero_user
+      omero_user_system: omero-server
+      omero_user_admin_user: root
+      omero_user_admin_pass: "{{ omero_server_rootpassword }}"
+      omero_group_create:
+        - name: public
+          type: read-only
+      omero_user_create:
+        - login: "{{ omero_web_public_user_override | default('public') }}"
+          firstname: public
+          lastname: user
+          password: "{{ omero_web_public_password_override | default('public') }}"
+          groups: "--group-name public"
 
+  tasks:
+    - name: Config for OMERO.web plugins
+      become: yes
+      template:
+        src: templates/omero-web-config-for-webapps.j2
+        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-webapps.omero"
+        owner: "root"
+        group: "root"
+        mode: "u=rw,go=r"
+      notify:
+        - restart omero-web
+    - name: OMERO.web config for CORS
+      become: yes
+      template:
+        src: templates/omero-web-config-for-cors.j2
+        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-cors.omero"
+        owner: "root"
+        group: "root"
+        mode: "u=rw,go=r"
+      notify:
+        - restart omero-web
+
+    - name: Create a figure scripts directory
+      become: yes
+      file:
+        path: /opt/omero/server/OMERO.server/lib/scripts/omero/figure_scripts
+        state: directory
+        mode: 0755
+        recurse: yes
+        owner: "omero-server"
+        group: "omero-server"
+    
+    - name: Download the Figure_To_Pdf.py script
+      become: yes
+      get_url:
+        url: https://raw.githubusercontent.com/ome/omero-figure/v{{ omero_figure_release }}/omero_figure/scripts/omero/figur>        dest: /opt/omero/server/OMERO.server/lib/scripts/omero/figure_scripts/Figure_To_Pdf.py
+        mode: 0755
+        owner: "omero-server"
+        group: "omero-server"
+        force: yes
+
+    - name: Download the Dataset_Images_To_New_Figure.py script
+      become: yes
+      get_url:
+        url: https://raw.githubusercontent.com/ome/omero-guide-figure/f45f733a16852ae8b3c52ec93aef480d26b8e9f9/scripts/Datas>        dest: /opt/omero/server/OMERO.server/lib/scripts/omero/figure_scripts/Dataset_Images_To_New_Figure.py
+        mode: 0755
+        owner: "omero-server"
+        group: "omero-server"
+        force: yes
+
+    - name: Download the Figure_Images_To_Dataset.py script
+      become: yes
+      get_url:
+        url: https://raw.githubusercontent.com/ome/omero-guide-figure/f45f733a16852ae8b3c52ec93aef480d26b8e9f9/scripts/Figur>        dest: /opt/omero/server/OMERO.server/lib/scripts/omero/figure_scripts/Figure_Images_To_Dataset.py
+        mode: 0755
+        owner: "omero-server"
+        group: "omero-server"
+        force: yes
+    - name: Create a workshop_scripts directory
+      become: yes
+      file:
+        path: /opt/omero/server/OMERO.server/lib/scripts/omero/workshop_scripts
+        state: directory
+        mode: 0755
+        recurse: yes
+        owner: "omero-server"
+        group: "omero-server"
+
+    - name: Add DropBox folder for trainer-1
+      become: yes
+      file:
+        path: /home/DropBox/trainer-1
+        state: directory
+        mode: 0755
+        recurse: yes
+        owner: "omero-server"
+        group: "omero-server"
+
+    - name: Add operating system user "importer1"
+      become: true
+      user:
+       name: "importer1"
+       state: present
+       groups: "{{ omero_server_system_managedrepo_group }}"
+       password: "{{ os_system_users_password | password_hash('sha512', 'ome') }}"
+
+    - name: Allow managed repo group to login
+      become: yes
+      lineinfile:
+        path: /etc/security/access.conf
+        regexp: "{{ omero_server_system_managedrepo_group }}"
+        insertbefore: BOF
+        line: "+:{{ omero_server_system_managedrepo_group }}:ALL"
+    
   vars:
     ## omero.server variables  
     # temporal upgrade force for omero server workaround
@@ -117,11 +238,15 @@ roles:
     omero_server_datadir_chown: True
     omero_server_selfsigned_certificates: True
     omero_server_rootpassword: ChangeMe
-    # omero_server_system_managedrepo_group: managed_repo_group
-    # omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
-    # omero_server_datadir_chown: False
+    omero_server_system_managedrepo_group: managed_repo_group
+    omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
+    omero_server_datadir_chown: False
+    omero_cli_duplicate_release: "{{ omero_cli_duplicate_release_override | default('0.4.0') }}"
+    omero_metadata_release: "{{ omero_metadata_release_overrride | default('0.8.0') }}"
+    omero_cli_render_release: "{{ omero_cli_render_release_override | default('0.7.0') }}"
     
     omero_server_config_set:
+      omero.fs.importUsers: "fm1"
       omero.certificates.owner: "/C=IN/ST=KA/L=Home/O=OME"
       omero.client.icetransports: ssl,wss,tcp
       omero.fs.watchDir: "/home/DropBox"
@@ -146,8 +271,28 @@ roles:
       omero.jvmcfg.percent.indexer: 20
       omero.jvmcfg.percent.pixeldata: 20
       
-    
     ## postgresql variables
     postgresql_version: "13"
+    
+    ## omero.web variables
+    omero_web_release: "{{ omero_web_release_override | default('5.14.1') }}"
+    omero_figure_release: "{{ omero_figure_release_override | default('5.0.0') }}"
+    omero_fpbioimage_release: "{{ omero_fpbioimage_release_override | default('0.4.0') }}"
+    omero_iviewer_release: "{{ omero_iviewer_release_override | default('0.11.3') }}"
+    omero_mapr_release: "{{ omero_mapr_release_override | default('0.5.0') }}"
+    omero_parade_release: "{{ omero_parade_release_override | default('0.2.3') }}"
+    omero_webtagging_autotag_release: "{{ omero_webtagging_autotag_release_override | default('3.2.0') }}"
+    omero_webtagging_tagsearch_release: "{{ omero_webtagging_tagsearch_release_override | default('3.2.0') }}"
+    
+    # The omero_web_apps_* vars are used by the ome.omero_web role under
+    # Python 3 otherwise ignored
+    omero_web_apps_packages:
+      - "omero-figure=={{ omero_figure_release }}"
+      - "omero-fpbioimage=={{ omero_fpbioimage_release }}"
+      - "omero-iviewer=={{ omero_iviewer_release }}"
+      - "omero-mapr=={{ omero_mapr_release }}"
+      - "omero-parade=={{ omero_parade_release }}"
+      - "omero-webtagging-autotag=={{ omero_webtagging_autotag_release }}"
+      - "omero-webtagging-tagsearch=={{ omero_webtagging_tagsearch_release }}"
 
 
