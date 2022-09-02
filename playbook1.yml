@@ -137,6 +137,13 @@ roles:
           password: "{{ omero_web_public_password_override | default('public') }}"
           groups: "--group-name public"
 
+    - role: ome.postgresql_backup
+      postgresql_backup_compress: true
+      postgresql_backup_dir: /OMERO/pgbackup
+      postgresql_backup_filename_format: "nightly-omero-%a.pgdump.gz"
+      postgresql_backup_minimum_expected_size: 100000000
+      
+      
   tasks:
     - name: Config for OMERO.web plugins
       become: yes
