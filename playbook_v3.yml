@@ -1,7 +1,7 @@
 ---
-# Adapted from OME training server(s)
-# Set https_letsencrypt_enabled to True in production to ensure certbot
-# handles the letsencrypt certificate setup
+## Adapted from OME training server(s)
+## Added SSL by template
+## Included more web apps
 
 - hosts: omero-all
   tasks:
@@ -23,7 +23,6 @@
 
   roles:
 
-    #- role: ome.nginx
 
     - role: ome.postgresql
       postgresql_databases:
@@ -120,25 +119,13 @@
                 - "openmicroscopy.org/omero/client/mapAnnotation"
               label: "KeyValue"
 
-        # Uncomment to configure SSL certificates
+        ## Configure SSL certificates
         omero.web.nginx_server_extra_config:
-           #- "listen 443 ssl;"
-           #- "ssl_certificate {{ ssl_certificate_public_path }};"
-           #- "ssl_certificate_key {{ ssl_certificate_key_path }};"
            - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
 
     - role: ome.ssl_certificate
       tags: ssl
 
-#  handlers:
-#    - name: reload nginx
-#      listen: ssl certificate changed
-#      become: true
-#      service:
-#        name: nginx
-#        state: reloaded
-
-   # - role: ome.cli_utils
 
   tasks:
 
@@ -157,46 +144,6 @@
         mode: 0644
       notify:
         - restart nginx
-
-#    - name: NGINX - OMERO websockets
-#     become: yes
-#      template:
-#        src: templates/nginx-confdnestedincludes-omerows-conf.j2
-#        dest: /etc/nginx/conf.d-nested-includes/omerows.conf
-#        mode: 0644
-#      notify:
-#        - restart nginx
-
-#    - name: NGINX - websocket proxy support
-#      become: yes
-#      template:
-#        src: templates/nginx-confd-websockets-conf.j2
-#        dest: /etc/nginx/conf.d/websockets.conf
-#        mode: 0644
-#      notify:
-#        - restart nginx
-
-#    - name: Config for OMERO.web plugins
-#      become: yes
-#      template:
-#        src: templates/omero-web-config-for-webapps.j2
-#        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-webapps.omero"
-#        owner: "root"
-#        group: "root"
-#        mode: "u=rw,go=r"
-#      notify:
-#        - restart omero-web
-
-#    - name: OMERO.web config for CORS
-#      become: yes
-#      template:
-#        src: templates/omero-web-config-for-cors.j2
-#        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-cors.omero"
-#        owner: "root"
-#        group: "root"
-#        mode: "u=rw,go=r"
-#      notify:
-#        - restart omero-web
 
     - name: Create a figure scripts directory
       become: yes
@@ -326,6 +273,4 @@
       omero.glacier2.IceSSL.Password: secret
       omero.fs.repo.path: "%user%_%userId%/%thread%//%year%-%month%/%day%/%time%"
       omero.server.nodedescriptors: "master:Blitz-0,Indexer-0,Processor-0,Storm,Tables-0"
-#      omero.throttling.method_time.error: 60000
-
-#- include: letsencrypt.yml
+      # omero.throttling.method_time.error: 60000
