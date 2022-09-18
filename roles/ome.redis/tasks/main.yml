@@ -1,0 +1,30 @@
+---
+# tasks file for roles/redis
+
+- name: update repository index | ubuntu 20.04
+  become: yes
+  apt:
+    update_cache: yes
+
+- name: install redis-server
+  become: yes
+  apt:
+    name: redis-server
+    state: present
+
+- name: configure redis
+  become: yes
+  lineinfile:
+    dest: /etc/redis/redis.conf
+    line: "bind {{ redis_listen | default('127.0.0.1') }}"
+    regexp: "^bind\\s.*"
+    state: present
+  notify:
+    - restart redis
+
+- name: set redis to start on startup
+  become: yes
+  service:
+    name: redis
+    state: started
+    enabled: yes
