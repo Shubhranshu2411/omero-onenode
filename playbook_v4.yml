@@ -1,7 +1,5 @@
 ---
-# Adapted from OME training server(s)
-# Set https_letsencrypt_enabled to True in production to ensure certbot
-# handles the letsencrypt certificate setup
+## Adapted from OME-demoserver
 
 - hosts: omero-all
   tasks:
@@ -20,10 +18,7 @@
       with_items:
         - mencoder # For the 'make movie' script
 
-
   roles:
-
-    #- role: ome.nginx
 
     - role: ome.postgresql
       postgresql_databases:
@@ -47,12 +42,14 @@
         - "reportlab<3.6"
         - markdown
         - scipy
-        # For "simple frap with figure" script
+        ## For "simple frap with figure" script
         - matplotlib
+
+    - role: ome.redis
 
     - role: ome.omero_web
       tags: ['web']
-      # Defaults overridden in private configuration
+      ## Defaults overridden in private configuration
       omero_web_systemd_limit_nofile: 16384
       omero_web_always_reset_config: True
       omero_web_systemd_start: True
@@ -68,77 +65,33 @@
           script_ui|ome_tiff|figure_script))|\
           webgateway/(?!(archived_files|download_as))\
           |iviewer/|mapr/|figure/)"
-        omero.web.apps:
-           - "omero_iviewer"
-           - "omero_figure"
-           - "omero_fpbioimage"
-           - "omero_webtagging_autotag"
-           - "omero_webtagging_tagsearch"
-           - "omero_parade"
-           - "omero_mapr"
-        omero.web.ui.center_plugins:
-          - ["Auto Tag", "omero_webtagging_autotag/auto_tag_init.js.html", "auto_tag_panel"]
-          - ["Parade", "omero_parade/init.js.html", "omero_parade"]
-        omero.web.ui.top_links:
-          - ["Data", "webindex", {"title": "Browse Data via Projects, Tags etc"}]
-          - ["History", "history", {"title": "History"}]
-          - ["Tag Search", "tagsearch"]
-          - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
-          - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]
-          - ["Figure", "figure_index", {"title": "Open Figure in new tab", "target": "_blank"}]
-          - ["Help", "https://help.openmicroscopy.org/", {"title": "Open OMERO user guide in a new tab", "target": "new"}]
-        omero.web.open_with:
-          - ["Image viewer", "webgateway", {"supported_objects": ["image"], "script_url": "webclient/javascript/ome.openwith_viewer.js"}]
-          - ["omero_figure", "new_figure", {"supported_objects":["images"], "target": "_blank", "label": "OMERO.figure"}]
-          - ["omero_fpbioimage", "fpbioimage_index", {"supported_objects":["image"], "script_url": "fpbioimage/openwith.js", "label": "FPBioimage"}]
-          - - omero_iviewer
-            - omero_iviewer_index
-            - supported_objects:
-                - images
-                - dataset
-                - well
-              script_url: omero_iviewer/openwith.js
-              label: OMERO.iviewer
-        omero.web.viewer.view: omero_iviewer.views.index
-        omero.web.mapr.config:
-          - menu: gene
-            config:
-              default:
-                - "Gene Symbol"
-              all:
-                - "Gene Symbol"
-                - "Gene Identifier"
-              ns:
-                - "openmicroscopy.org/mapr/gene"
-              label: "Gene"
-          - menu: keyvalue
-            config:
-              default:
-                - "Any Value"
-              all: []
-              ns:
-                - "openmicroscopy.org/omero/client/mapAnnotation"
-              label: "KeyValue"
 
-        # Uncomment to configure SSL certificates
+        omero.web.caches:
+          default:
+            BACKEND: django_redis.cache.RedisCache
+            LOCATION: redis://127.0.0.1:6379/0
+        omero.web.session_engine: django.contrib.sessions.backends.cache
+
+        omero_web_python_addons:
+        - "omero-figure=={{ omero_figure_release }}"
+        - "omero-fpbioimage=={{ omero_fpbioimage_release }}"
+        - "omero-webtagging-autotag=={{ omero_webtagging_autotag_release }}"
+        - "omero-webtagging-tagsearch=={{ omero_webtagging_tagsearch_release }}"
+        - "omero-iviewer=={{ omero_iviewer_release }}"
+        - "omero-parade=={{ omero_parade_release }}"
+        #- "omero-signup=={{ omero_signup_release }}"
+        - "django-redis==5.0.0"
+
+               
+        omero.web.viewer.view: omero_iviewer.views.index
+        
+        ## Configure SSL certificates
         omero.web.nginx_server_extra_config:
-           #- "listen 443 ssl;"
-           #- "ssl_certificate {{ ssl_certificate_public_path }};"
-           #- "ssl_certificate_key {{ ssl_certificate_key_path }};"
-           - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
+          - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
 
     - role: ome.ssl_certificate
       tags: ssl
 
-#  handlers:
-#    - name: reload nginx
-#      listen: ssl certificate changed
-#      become: true
-#      service:
-#        name: nginx
-#        state: reloaded
-
-   # - role: ome.cli_utils
 
   tasks:
 
@@ -158,45 +111,45 @@
       notify:
         - restart nginx
 
-#    - name: NGINX - OMERO websockets
-#     become: yes
-#      template:
-#        src: templates/nginx-confdnestedincludes-omerows-conf.j2
-#        dest: /etc/nginx/conf.d-nested-includes/omerows.conf
-#        mode: 0644
-#      notify:
-#        - restart nginx
+    - name: NGINX - OMERO websockets
+      become: yes
+      template:
+        src: templates/nginx-confdnestedincludes-omerows-conf.j2
+        dest: /etc/nginx/conf.d-nested-includes/omerows.conf
+        mode: 0644
+      notify:
+        - restart nginx
 
-#    - name: NGINX - websocket proxy support
-#      become: yes
-#      template:
-#        src: templates/nginx-confd-websockets-conf.j2
-#        dest: /etc/nginx/conf.d/websockets.conf
-#        mode: 0644
-#      notify:
-#        - restart nginx
+    - name: NGINX - websocket proxy support
+      become: yes
+      template:
+        src: templates/nginx-confd-websockets-conf.j2
+        dest: /etc/nginx/conf.d/websockets.conf
+        mode: 0644
+      notify:
+        - restart nginx
 
-#    - name: Config for OMERO.web plugins
-#      become: yes
-#      template:
-#        src: templates/omero-web-config-for-webapps.j2
-#        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-webapps.omero"
-#        owner: "root"
-#        group: "root"
-#        mode: "u=rw,go=r"
-#      notify:
-#        - restart omero-web
+    - name: Config for OMERO.web plugins
+      become: yes
+      template:
+        src: templates/omero-web-config-for-webapps.j2
+        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-webapps.omero"
+        owner: "root"
+        group: "root"
+        mode: "u=rw,go=r"
+      notify:
+        - restart omero-web
 
-#    - name: OMERO.web config for CORS
-#      become: yes
-#      template:
-#        src: templates/omero-web-config-for-cors.j2
-#        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-cors.omero"
-#        owner: "root"
-#        group: "root"
-#        mode: "u=rw,go=r"
-#      notify:
-#        - restart omero-web
+    - name: OMERO.web config for CORS
+      become: yes
+      template:
+        src: templates/omero-web-config-for-cors.j2
+        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-cors.omero"
+        owner: "root"
+        group: "root"
+        mode: "u=rw,go=r"
+      notify:
+        - restart omero-web
 
     - name: Create a figure scripts directory
       become: yes
@@ -268,46 +221,17 @@
   # Crypted passwords generated using
   # https://docs.ansible.com/ansible/latest/reference_appendices/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module
   vars:
-    omero_server_datadir_chown: True
-    #temporal upgrade force for omero server workaround
-    #omero_server_checkupgrade_comparator: '!='
-    postgresql_version: "13"
 
-    omero_server_selfsigned_certificates: True
-   # omero_server_system_managedrepo_group: managed_repo_group
-   # omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
-   # omero_server_datadir_chown: False
+    ## omero-server variables    
     omero_server_release: "{{ omero_server_release_override | default('5.6.5') }}"
     omero_server_rootpassword: ChangeMe
-
-    omero_web_release: "{{ omero_web_release_override | default('5.14.1') }}"
-    omero_figure_release: "{{ omero_figure_release_override | default('5.0.0') }}"
-    omero_fpbioimage_release: "{{ omero_fpbioimage_release_override | default('0.4.0') }}"
-    omero_iviewer_release: "{{ omero_iviewer_release_override | default('0.11.3') }}"
-    omero_mapr_release: "{{ omero_mapr_release_override | default('0.5.0') }}"
-    omero_parade_release: "{{ omero_parade_release_override | default('0.2.3') }}"
-    # For https://github.com/openmicroscopy/ansible-role-java, which is a dependency.
-    java_jdk_install: True
-
-    # The omero_web_apps_* vars are used by the ome.omero_web role under
-    # Python 3 otherwise ignored
-    omero_web_apps_packages:
-      - "omero-figure=={{ omero_figure_release }}"
-      - "omero-fpbioimage=={{ omero_fpbioimage_release }}"
-      - "omero-iviewer=={{ omero_iviewer_release }}"
-      - "omero-mapr=={{ omero_mapr_release }}"
-      - "omero-parade=={{ omero_parade_release }}"
-      - "omero-webtagging-autotag=={{ omero_webtagging_autotag_release }}"
-      - "omero-webtagging-tagsearch=={{ omero_webtagging_tagsearch_release }}"
-
-   # ome_training_scripts_release: "{{ ome_training_scripts_release_override | default('0.2.0') }}"
-    omero_webtagging_autotag_release: "{{ omero_webtagging_autotag_release_override | default('3.2.0') }}"
-    omero_webtagging_tagsearch_release: "{{ omero_webtagging_tagsearch_release_override | default('3.2.0') }}"
-    omero_cli_duplicate_release: "{{ omero_cli_duplicate_release_override | default('0.4.0') }}"
-    omero_metadata_release: "{{ omero_metadata_release_overrride | default('0.8.0') }}"
-    omero_cli_render_release: "{{ omero_cli_render_release_override | default('0.7.0') }}"
-    os_system_users_password: "{{ os_system_users_password_override | default('ome') }}"
-
+    omero_server_datadir_chown: True
+    # omero_server_datadir_chown: False
+    ## OMERO data directory
+    omero_server_datadir: /OMERO
+    omero_server_selfsigned_certificates: True
+    omero_server_system_managedrepo_group: managed_repo_group
+    #omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
     omero_server_config_set:
       omero.fs.importUsers: "fm1"
       omero.certificates.owner: "/C=IN/ST=KA/L=Home/O=OME"
@@ -326,6 +250,27 @@
       omero.glacier2.IceSSL.Password: secret
       omero.fs.repo.path: "%user%_%userId%/%thread%//%year%-%month%/%day%/%time%"
       omero.server.nodedescriptors: "master:Blitz-0,Indexer-0,Processor-0,Storm,Tables-0"
-#      omero.throttling.method_time.error: 60000
+      omero.throttling.method_time.error: 60000
 
-#- include: letsencrypt.yml
+    omero_cli_duplicate_release: "{{ omero_cli_duplicate_release_override | default('0.4.0') }}"
+    omero_metadata_release: "{{ omero_metadata_release_overrride | default('0.8.0') }}"
+    omero_cli_render_release: "{{ omero_cli_render_release_override | default('0.7.0') }}"
+
+    ## postgresql variables
+    postgresql_version: "13"
+
+    ## omero-web variables
+    omero_web_release: "{{ omero_web_release_override | default('5.14.1') }}"
+    omero_figure_release: "{{ omero_figure_release_override | default('5.0.0') }}"
+    omero_fpbioimage_release: "{{ omero_fpbioimage_release_override | default('0.4.0') }}"
+    omero_iviewer_release: "{{ omero_iviewer_release_override | default('0.11.3') }}"
+    omero_mapr_release: "{{ omero_mapr_release_override | default('0.5.0') }}"
+    omero_parade_release: "{{ omero_parade_release_override | default('0.2.3') }}"
+    omero_figure_script_release: "{{ omero_figure_script_release_override | default('v5.0.0') }}"
+    omero_webtagging_autotag_release: "{{ omero_webtagging_autotag_release_override | default('3.2.0') }}"
+    omero_webtagging_tagsearch_release: "{{ omero_webtagging_tagsearch_release_override | default('3.2.0') }}"
+    # ome_training_scripts_release: "{{ ome_training_scripts_release_override | default('0.2.0') }}"
+
+    # For https://github.com/openmicroscopy/ansible-role-java, which is a dependency.
+    java_jdk_install: True
+    os_system_users_password: "{{ os_system_users_password_override | default('ome') }}"
