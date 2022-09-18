@@ -1,3 +1,8 @@
+## Adapted from "ansible-example-omero-addons" with some addtion
+## Install OMERO.server and OMERO.web with a public user
+
+
+
 ---
 - hosts: all
   tasks:
