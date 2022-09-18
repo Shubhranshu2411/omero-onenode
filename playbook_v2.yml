@@ -1,3 +1,8 @@
+## Upgraded form playbook_v1
+## Added web socket with SSL
+## Included more web apps
+
+
 ---
 - hosts: all
   tasks:
@@ -38,8 +43,7 @@
         - scipy
         # For "simple frap with figure" script
         - matplotlib
-    
-    #- role: ome.nginx
+
     
     - role: ome.ssl_certificate
       tags: ssl
@@ -113,7 +117,9 @@
                 - "openmicroscopy.org/omero/client/mapAnnotation"
               label: "KeyValue"
         omero.web.nginx_server_extra_config:
-          - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
+          - "listen 443 ssl;"
+          - "ssl_certificate {{ ssl_certificate_public_path }};"
+          - "ssl_certificate_key {{ ssl_certificate_key_path }};"
           - >
             location = /omero-ws {
               proxy_pass https://127.0.0.1:4066;
@@ -145,27 +151,6 @@
       
       
   tasks:
-    - name: Config for OMERO.web plugins
-      become: yes
-      template:
-        src: templates/omero-web-config-for-webapps.j2
-        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-webapps.omero"
-        owner: "root"
-        group: "root"
-        mode: "u=rw,go=r"
-      notify:
-        - restart omero-web
-    - name: OMERO.web config for CORS
-      become: yes
-      template:
-        src: templates/omero-web-config-for-cors.j2
-        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-cors.omero"
-        owner: "root"
-        group: "root"
-        mode: "u=rw,go=r"
-      notify:
-        - restart omero-web
-
     - name: Create a figure scripts directory
       become: yes
       file:
