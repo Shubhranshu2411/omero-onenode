@@ -2,6 +2,8 @@
 ## Adapted from OME training server(s)
 ## Upgraded from playbook_v3
 ## Included web socket
+## Included redis and dijango
+
 
 - hosts: omero-all
   tasks:
@@ -249,8 +251,8 @@
     postgresql_version: "13"
 
     omero_server_selfsigned_certificates: True
-   # omero_server_system_managedrepo_group: managed_repo_group
-   # omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
+    omero_server_system_managedrepo_group: managed_repo_group
+    omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
    # omero_server_datadir_chown: False
     omero_server_release: "{{ omero_server_release_override | default('5.6.5') }}"
     omero_server_rootpassword: ChangeMe
@@ -265,24 +267,12 @@
     # For https://github.com/openmicroscopy/ansible-role-java, which is a dependency.
     java_jdk_install: True
 
-    # The omero_web_apps_* vars are used by the ome.omero_web role under
-    # Python 3 otherwise ignored
-#    omero_web_apps_packages:
-#      - "omero-figure=={{ omero_figure_release }}"
-#      - "omero-fpbioimage=={{ omero_fpbioimage_release }}"
-#      - "omero-iviewer=={{ omero_iviewer_release }}"
-#      - "omero-mapr=={{ omero_mapr_release }}"
-#      - "omero-parade=={{ omero_parade_release }}"
-#      - "omero-webtagging-autotag=={{ omero_webtagging_autotag_release }}"
-#      - "omero-webtagging-tagsearch=={{ omero_webtagging_tagsearch_release }}"
-#      - "django-redis==5.0.0"
-
    # ome_training_scripts_release: "{{ ome_training_scripts_release_override | default('0.2.0') }}"
     omero_webtagging_autotag_release: "{{ omero_webtagging_autotag_release_override | default('3.2.0') }}"
     omero_webtagging_tagsearch_release: "{{ omero_webtagging_tagsearch_release_override | default('3.2.0') }}"
     omero_cli_duplicate_release: "{{ omero_cli_duplicate_release_override | default('0.4.0') }}"
-    omero_metadata_release: "{{ omero_metadata_release_overrride | default('0.8.0') }}"
-    omero_cli_render_release: "{{ omero_cli_render_release_override | default('0.7.0') }}"
+    omero_metadata_release: "{{ omero_metadata_release_overrride | default('0.10.0') }}"
+    omero_cli_render_release: "{{ omero_cli_render_release_override | default('0.8.0') }}"
     os_system_users_password: "{{ os_system_users_password_override | default('ome') }}"
 
     omero_server_config_set:
