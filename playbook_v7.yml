@@ -58,7 +58,7 @@
       # Defaults overridden in private configuration
       omero_web_systemd_limit_nofile: 16384
       omero_web_always_reset_config: True
-      #omero_web_systemd_start: True
+      omero_web_systemd_start: True
 
       omero_web_config_set:
 
@@ -85,13 +85,34 @@
         omero.web.nginx_server_extra_config:
           - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
 
+      omero_web_apps_config_set:
+        omero.web.viewer.view: omero_iviewer.views.index
+        omero.web.mapr.config:
+          - menu: gene
+            config:
+              default:
+                - "Gene Symbol"
+              all:
+                - "Gene Symbol"
+                - "Gene Identifier"
+              ns:
+                - "openmicroscopy.org/mapr/gene"
+              label: "Gene"
+          - menu: keyvalue
+            config:
+              default:
+                - "Any Value"
+              all: []
+              ns:
+                - "openmicroscopy.org/omero/client/mapAnnotation"
+              label: "KeyValue"
       omero_web_apps_names:
         - omero_iviewer
         - omero_figure
         - omero_fpbioimage
         - omero_webtagging_autotag
         - omero_webtagging_tagsearch
-        - omero_parade"
+        - omero_parade
         - omero_mapr
 
         # The omero_web_apps_* vars are used by the ome.omero_web role under
@@ -106,18 +127,28 @@
         - "omero-mapr=={{ omero_mapr_release }}"
 
       omero_web_apps_top_links:
-        - lable: Data
+        - label: Data
           link: webindex
           attrs:
             title: Browse Data via Projects, Tags etc
-        - lable: History
+        - label: History
           link: history
           attrs:
             title: History
         - label: Tag Search
           link: tagsearch
-
-
+        - label: Genes
+          link:
+            query_string: 
+              experimenter: -1
+            viewname: maprindex_gene
+          attrs:
+            title: Find Gene annotations
+        - label: Key-Value
+          link:
+            viewname: maprindex_keyvalue
+          attrs:
+            title: Search for manually-added Key-Value pairs
         - label: Figure
           link: figure_index
           attrs:
@@ -132,8 +163,8 @@
 ##        - ["Data", "webindex", {"title": "Browse Data via Projects, Tags etc"}]
 ##        - ["History", "history", {"title": "History"}]
 ##        - ["Tag Search", "tagsearch"]
-#        - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
-#        - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]
+##        - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
+##        - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]
 ##        - ["Figure", "figure_index", {"title": "Open Figure in new tab", "target": "_blank"}]
 ##        - ["Help", "https://help.openmicroscopy.org/", {"title": "Open OMERO user guide in a new tab", "target": "new"}]
 
@@ -187,30 +218,6 @@
 
 #            - ["Auto Tag", "omero_webtagging_autotag/auto_tag_init.js.html", "auto_tag_panel"]
 #            - ["Parade", "omero_parade/init.js.html", "omero_parade"]
-
-        omero.web.mapr.config:
-          - menu: gene
-            config:
-              default:
-                - "Gene Symbol"
-              all:
-                - "Gene Symbol"
-                - "Gene Identifier"
-              ns:
-                - "openmicroscopy.org/mapr/gene"
-              label: "Gene"
-          - menu: keyvalue
-            config:
-              default:
-                - "Any Value"
-              all: []
-              ns:
-                - "openmicroscopy.org/omero/client/mapAnnotation"
-              label: "KeyValue"
-
-      omero_web_apps_config_set:
-        omero.web.viewer.view: omero_iviewer.views.index
-
 
     - role: ome.ssl_certificate
       tags: ssl
