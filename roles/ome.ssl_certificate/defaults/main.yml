@@ -30,7 +30,7 @@ ssl_certificate_selfsigned_create: true
 
 # Certificate subject
 ssl_certificate_selfsigned_subject: |-
-  /C=UK/ST=Scotland/L=Dundee/O=OME/CN={{ ansible_fqdn }}
+  /C=IN/ST=KA/L=BLR/O=Home/CN={{ ansible_fqdn }}
 
 # Certificate validity (days)
 ssl_certificate_selfsigned_days: 365

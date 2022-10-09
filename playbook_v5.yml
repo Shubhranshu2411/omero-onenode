@@ -17,11 +17,20 @@
     - name: OMERO.figure server-side prerequisites, script prerequisites + web server for decoupled OMERO.web
       become: yes
       apt:
-        name: "{{ item }}"
+        pkg:
+          - mencoder
+          - acl
         state: present
-      with_items:
-        - mencoder # For the 'make movie' script
 
+
+#    - name: OMERO.figure server-side prerequisites, script prerequisites + web server for decoupled OMERO.web
+#      become: yes
+#      apt:
+#        name: "{{ item }}"
+#        state: present
+#      with_items:
+#        - mencoder # For the 'make movie' script
+#        - acl
 
   roles:
 
@@ -253,7 +262,9 @@
     omero_server_selfsigned_certificates: True
     omero_server_system_managedrepo_group: managed_repo_group
     omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
-   # omero_server_datadir_chown: False
+    # omero_server_datadir_chown: False
+    ## OMERO data directory
+    omero_server_datadir: /OMERO
     omero_server_release: "{{ omero_server_release_override | default('5.6.5') }}"
     omero_server_rootpassword: ChangeMe
 
@@ -277,7 +288,7 @@
 
     omero_server_config_set:
       omero.fs.importUsers: "fm1"
-      omero.certificates.owner: "/C=IN/ST=KA/L=Home/O=OME"
+      omero.certificates.owner: "/C=IN/ST=KA/L=BLR/O=Home"
       omero.client.icetransports: ssl,wss,tcp
       omero.fs.watchDir: "/home/DropBox"
       omero.fs.importArgs: "-T \"regex:^.*/(?<Container1>.*?)\""
