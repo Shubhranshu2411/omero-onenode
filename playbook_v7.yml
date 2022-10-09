@@ -106,19 +106,56 @@
         - "omero-mapr=={{ omero_mapr_release }}"
 
       omero_web_apps_top_links:
-        - ["Data", "webindex", {"title": "Browse Data via Projects, Tags etc"}]
-        - ["History", "history", {"title": "History"}]
-        - ["Tag Search", "tagsearch"]
-        - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
-        - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]
-        - ["Figure", "figure_index", {"title": "Open Figure in new tab", "target": "_blank"}]
-        - ["Help", "https://help.openmicroscopy.org/", {"title": "Open OMERO user guide in a new tab", "target": "new"}]
+        - lable: Data
+          link: webindex
+          attrs:
+            title: Browse Data via Projects, Tags etc
+        - lable: History
+          link: history
+          attrs:
+            title: History
+        - label: Tag Search
+          link: tagsearch
+
+
+        - label: Figure
+          link: figure_index
+          attrs:
+            title: Open Figure in new tab
+            target: _blank
+        - label: Help
+          link: https://help.openmicroscopy.org/
+          attrs:
+            title: Open OMERO user guide in a new tab
+            target: new
+
+##        - ["Data", "webindex", {"title": "Browse Data via Projects, Tags etc"}]
+##        - ["History", "history", {"title": "History"}]
+##        - ["Tag Search", "tagsearch"]
+#        - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
+#        - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]
+##        - ["Figure", "figure_index", {"title": "Open Figure in new tab", "target": "_blank"}]
+##        - ["Help", "https://help.openmicroscopy.org/", {"title": "Open OMERO user guide in a new tab", "target": "new"}]
 
       omero_web_apps_config_append:
         omero.web.open_with:
-          - ["Image viewer", "webgateway", {"supported_objects": ["image"], "script_url": "webclient/javascript/ome.openwith_viewer.js"}]
-          - ["omero_figure", "new_figure", {"supported_objects":["images"], "target": "_blank", "label": "OMERO.figure"}]
-          - ["omero_fpbioimage", "fpbioimage_index", {"supported_objects":["image"], "script_url": "fpbioimage/openwith.js", "label": "FPBioimage"}]
+          - - Image viewer
+            - webgateway
+            - supported_objects:
+                - image
+              script_url: webclient/javascript/ome.openwith_viewer.js
+          - - omero_figure
+            - new_figure
+            - supported_objects:
+                - images
+              target: _blank
+              label: OMERO.figure
+          - - omero_fpbioimage
+            - fpbioimage_index
+            - supported_objects:
+                - image
+              script_url: fpbioimage/openwith.js
+              label: FPBioimage
           - - omero_iviewer
             - omero_iviewer_index
             - supported_objects:
@@ -128,9 +165,28 @@
               script_url: omero_iviewer/openwith.js
               label: OMERO.iviewer
 
+#          - ["Image viewer", "webgateway", {"supported_objects": ["image"], "script_url": "webclient/javascript/ome.openwith_viewer.js"}]
+#          - ["omero_figure", "new_figure", {"supported_objects":["images"], "target": "_blank", "label": "OMERO.figure"}]
+#          - ["omero_fpbioimage", "fpbioimage_index", {"supported_objects":["image"], "script_url": "fpbioimage/openwith.js", "label": "FPBioimage"}]
+#          - - omero_iviewer
+#            - omero_iviewer_index
+#            - supported_objects:
+#                - images
+#                - dataset
+#                - well
+#              script_url: omero_iviewer/openwith.js
+#              label: OMERO.iviewer
+
         omero.web.ui.center_plugins:
-            - ["Auto Tag", "omero_webtagging_autotag/auto_tag_init.js.html", "auto_tag_panel"]
-            - ["Parade", "omero_parade/init.js.html", "omero_parade"]
+          - - Auto Tag
+            - omero_webtagging_autotag/auto_tag_init.js.html
+            - auto_tag_panel
+          - - Parade
+            - omero_parade/init.js.html
+            - omero_parade
+
+#            - ["Auto Tag", "omero_webtagging_autotag/auto_tag_init.js.html", "auto_tag_panel"]
+#            - ["Parade", "omero_parade/init.js.html", "omero_parade"]
 
         omero.web.mapr.config:
           - menu: gene
