@@ -58,7 +58,7 @@
       # Defaults overridden in private configuration
       omero_web_systemd_limit_nofile: 16384
       omero_web_always_reset_config: True
-      omero_web_systemd_start: True
+      #omero_web_systemd_start: True
 
       omero_web_config_set:
 
@@ -78,43 +78,43 @@
             LOCATION: redis://127.0.0.1:6379/0
         omero.web.session_engine: django.contrib.sessions.backends.cache
 
-        omero.web.apps:
-          - "omero_iviewer"
-          - "omero_figure"
-          - "omero_fpbioimage"
-          - "omero_webtagging_autotag"
-          - "omero_webtagging_tagsearch"
-          - "omero_parade"
-          - "omero_mapr"
-
-        # The omero_web_apps_* vars are used by the ome.omero_web role under
-        # Python 3 otherwise ignored
-        omero_web_apps_packages:
-          - "omero-iviewer=={{ omero_iviewer_release }}"
-          - "omero-figure=={{ omero_figure_release }}"
-          - "omero-fpbioimage=={{ omero_fpbioimage_release }}"
-          - "omero-webtagging-autotag=={{ omero_webtagging_autotag_release }}"
-          - "omero-webtagging-tagsearch=={{ omero_webtagging_tagsearch_release }}"
-          - "omero-parade=={{ omero_parade_release }}"
-          - "omero-mapr=={{ omero_mapr_release }}"
-
         omero_web_python_addons:
           - "django-redis==5.0.0"
           - "omero-py>={{ omero_py_release }}"
+        ## Configure SSL certificates
+        omero.web.nginx_server_extra_config:
+          - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
 
-        omero.web.ui.center_plugins:
-          - ["Auto Tag", "omero_webtagging_autotag/auto_tag_init.js.html", "auto_tag_panel"]
-          - ["Parade", "omero_parade/init.js.html", "omero_parade"]
+      omero_web_apps_names:
+        - omero_iviewer
+        - omero_figure
+        - omero_fpbioimage
+        - omero_webtagging_autotag
+        - omero_webtagging_tagsearch
+        - omero_parade"
+        - omero_mapr
 
-        omero.web.ui.top_links:
-          - ["Data", "webindex", {"title": "Browse Data via Projects, Tags etc"}]
-          - ["History", "history", {"title": "History"}]
-          - ["Tag Search", "tagsearch"]
-          - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
-          - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]
-          - ["Figure", "figure_index", {"title": "Open Figure in new tab", "target": "_blank"}]
-          - ["Help", "https://help.openmicroscopy.org/", {"title": "Open OMERO user guide in a new tab", "target": "new"}]
+        # The omero_web_apps_* vars are used by the ome.omero_web role under
+        # Python 3 otherwise ignored
+      omero_web_apps_packages:
+        - "omero-iviewer=={{ omero_iviewer_release }}"
+        - "omero-figure=={{ omero_figure_release }}"
+        - "omero-fpbioimage=={{ omero_fpbioimage_release }}"
+        - "omero-webtagging-autotag=={{ omero_webtagging_autotag_release }}"
+        - "omero-webtagging-tagsearch=={{ omero_webtagging_tagsearch_release }}"
+        - "omero-parade=={{ omero_parade_release }}"
+        - "omero-mapr=={{ omero_mapr_release }}"
 
+      omero_web_apps_top_links:
+        - ["Data", "webindex", {"title": "Browse Data via Projects, Tags etc"}]
+        - ["History", "history", {"title": "History"}]
+        - ["Tag Search", "tagsearch"]
+        - ["Genes", {"query_string": {"experimenter": -1}, "viewname": "maprindex_gene"}, {"title": "Find Gene annotations"}]
+        - ["Key-Value", {"viewname": "maprindex_keyvalue"}, {"title": "Search for manually-added Key-Value pairs"}]
+        - ["Figure", "figure_index", {"title": "Open Figure in new tab", "target": "_blank"}]
+        - ["Help", "https://help.openmicroscopy.org/", {"title": "Open OMERO user guide in a new tab", "target": "new"}]
+
+      omero_web_apps_config_append:
         omero.web.open_with:
           - ["Image viewer", "webgateway", {"supported_objects": ["image"], "script_url": "webclient/javascript/ome.openwith_viewer.js"}]
           - ["omero_figure", "new_figure", {"supported_objects":["images"], "target": "_blank", "label": "OMERO.figure"}]
@@ -127,7 +127,11 @@
                 - well
               script_url: omero_iviewer/openwith.js
               label: OMERO.iviewer
-        omero.web.viewer.view: omero_iviewer.views.index
+
+        omero.web.ui.center_plugins:
+            - ["Auto Tag", "omero_webtagging_autotag/auto_tag_init.js.html", "auto_tag_panel"]
+            - ["Parade", "omero_parade/init.js.html", "omero_parade"]
+
         omero.web.mapr.config:
           - menu: gene
             config:
@@ -148,9 +152,9 @@
                 - "openmicroscopy.org/omero/client/mapAnnotation"
               label: "KeyValue"
 
-        ## Configure SSL certificates
-        omero.web.nginx_server_extra_config:
-           - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
+      omero_web_apps_config_set:
+        omero.web.viewer.view: omero_iviewer.views.index
+
 
     - role: ome.ssl_certificate
       tags: ssl
