@@ -114,7 +114,7 @@
         - omero_webtagging_tagsearch
         - omero_parade
         - omero_mapr
-        - django-cors-headers
+ #       - django-cors-headers
 
         # The omero_web_apps_* vars are used by the ome.omero_web role under
         # Python 3 otherwise ignored
@@ -126,7 +126,7 @@
         - "omero-webtagging-tagsearch=={{ omero_webtagging_tagsearch_release }}"
         - "omero-parade=={{ omero_parade_release }}"
         - "omero-mapr=={{ omero_mapr_release }}"
-        - "django-cors-headers==3.7.0"
+#        - "django-cors-headers==3.7.0"
 
       omero_web_apps_top_links:
 #        - label: Data
@@ -199,20 +199,17 @@
             - omero_parade/init.js.html
             - omero_parade
 
-        omero.web.middleware:
-          - - index:
-                - 0.5
-            - class:
-                - corsheaders.middleware.CorsMiddleware
-          - - index:
-                - 10
-            - class:
-                - corsheaders.middleware.CorsPostCsrfMiddleware
+#        omero.web.middleware:
+#          - - index: 0.5
+#            - class: corsheaders.middleware.CorsMiddleware
+#          - - index: 10
+#            - class: corsheaders.middleware.CorsPostCsrfMiddleware
 
 #          - '{"index": 0.5, "class": "corsheaders.middleware.CorsMiddleware"}'
 #          - '{"index": 10, "class": "corsheaders.middleware.CorsPostCsrfMiddleware"}'
-      omero.web.cors_origin_allow_all: True
+#      omero.web.cors_origin_allow_all: True
 
+    - role: ome.omero_web_django_prometheus
     - role: ome.ssl_certificate
       tags: ssl
 
