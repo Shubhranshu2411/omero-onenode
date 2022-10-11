@@ -316,6 +316,8 @@
    # omero_server_system_managedrepo_group: managed_repo_group
    # omero_server_datadir_managedrepo_mode: u=rwX,g=srwX,o=rX,+t
    # omero_server_datadir_chown: False
+    ## OMERO data directory
+    omero_server_datadir: /OMERO
     omero_server_release: "{{ omero_server_release_override | default('5.6.5') }}"
     omero_server_rootpassword: ChangeMe
     # For https://github.com/openmicroscopy/ansible-role-java, which is a dependency.
