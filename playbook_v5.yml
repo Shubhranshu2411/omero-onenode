@@ -166,7 +166,7 @@
       become: yes
       template:
         src: templates/omero-web-config-for-webapps.j2
-        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-webapps.omero"
+        dest: "/opt/omero/web/config/omero-web-config-for-webapps.omero"
         owner: "root"
         group: "root"
         mode: "u=rw,go=r"
@@ -177,7 +177,7 @@
       become: yes
       template:
         src: templates/omero-web-config-for-cors.j2
-        dest: "{{ omero_web_basedir }}/config/omero-web-config-for-cors.omero"
+        dest: "/opt/omero/web/config/omero-web-config-for-cors.omero"
         owner: "root"
         group: "root"
         mode: "u=rw,go=r"
