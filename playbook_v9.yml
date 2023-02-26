@@ -1,6 +1,6 @@
 ---
 ## Adapted from OME training server(s)
-## Upgraded from playbook_v6
+## Upgraded from playbook_v8
 ## Included web socket
 ## Included redis
 ## Included web caches
@@ -81,8 +81,8 @@
           - "django-redis==5.0.0"
           - "omero-py>={{ omero_py_release }}"
         ## Configure SSL certificates
-        omero.web.nginx_server_extra_config:
-          - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
+#        omero.web.nginx_server_extra_config:
+#          - 'include /etc/nginx/conf.d-nested-includes/*.conf;'
 
       omero_web_apps_config_set:
         omero.web.viewer.view: omero_iviewer.views.index
@@ -210,8 +210,8 @@
 #      omero.web.cors_origin_allow_all: True
 
     - role: ome.omero_web_django_prometheus
-    - role: ome.ssl_certificate
-      tags: ssl
+#    - role: ome.ssl_certificate
+#      tags: ssl
 
 
   tasks:
@@ -223,14 +223,14 @@
         state: directory
         mode: 0755
 
-    - name: NGINX - SSL Configuration
-      become: yes
-      template:
-        src: templates/nginx-confdnestedincludes-ssl-conf.j2
-        dest: /etc/nginx/conf.d-nested-includes/ssl.conf
-        mode: 0644
-      notify:
-        - restart nginx
+#    - name: NGINX - SSL Configuration
+#      become: yes
+#      template:
+#        src: templates/nginx-confdnestedincludes-ssl-conf.j2
+#        dest: /etc/nginx/conf.d-nested-includes/ssl.conf
+#        mode: 0644
+#      notify:
+#        - restart nginx
 
     - name: NGINX - OMERO websockets
       become: yes
