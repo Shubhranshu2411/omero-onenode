@@ -64,7 +64,7 @@
 
   vars:
     # Must be defined somewhere
-    https_certificate_domain: www.omero-test.ringoffire.com
+    https_certificate_domain: omerotest.ringoffire.co.in
     letsencrypt_email: shubhranshujena@gmail.com
     # This must match the expectations of certbot, do not change this:
     https_letsencrypt_cert_path: "/etc/letsencrypt/live/{{ https_certificate_domain | default('localhost') }}"
