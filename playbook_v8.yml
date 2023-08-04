@@ -97,7 +97,7 @@
                 - "Gene Symbol"
                 - "Gene Identifier"
               ns:
-                - "openmicroscopy.org/mapr/gene"
+                - "omerotest.home/mapr/gene"
               label: "Gene"
           - menu: keyvalue
             config:
@@ -105,7 +105,7 @@
                 - "Any Value"
               all: []
               ns:
-                - "openmicroscopy.org/omero/client/mapAnnotation"
+                - "omerotest.home/omero/client/mapAnnotation"
               label: "KeyValue"
       omero_web_apps_names:
         - omero_iviewer
